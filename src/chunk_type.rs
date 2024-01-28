@@ -1,6 +1,7 @@
 use std::convert::TryFrom;
 use std::str::FromStr;
 use std::fmt;
+use std::cmp::PartialEq;
 
 struct ChunkType {
     arr: [u8; 4],
@@ -36,5 +37,32 @@ impl FromStr for ChunkType {
 impl fmt::Display for ChunkType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.arr)
+    }
+}
+
+impl PartialEq for ChunkType {
+    fn eq(&self, other: &Self) -> bool {
+        self.arr == other.arr
+    }
+}
+
+impl ChunkType {
+    fn bytes(&self) -> [u8; 4] {
+        self.arr
+    }
+    fn is_valid(&self) -> bool {
+        self.is_critical() && self.is_public() && self.is_reserved_bit_valid() && self.is_safe_to_copy()
+    }
+    fn is_critical(&self) -> bool {
+        self.arr[0].is_ascii_uppercase()
+    }
+    fn is_public(&self) -> bool {
+        self.arr[1].is_ascii_uppercase()
+    }
+    fn is_reserved_bit_valid(&self) -> bool {
+        self.arr[2].is_ascii_uppercase()
+    }
+    fn is_safe_to_copy(&self) -> bool {
+        self.arr[3].is_ascii_lowercase()
     }
 }
