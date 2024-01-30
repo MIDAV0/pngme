@@ -5,8 +5,8 @@ use std::cmp::PartialEq;
 use crate::{Error, Result};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct ChunkType {
-    arr: [u8; 4],
+pub struct ChunkType {
+    pub arr: [u8; 4],
 }
 
 impl TryFrom<[u8; 4]> for ChunkType {
