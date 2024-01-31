@@ -17,28 +17,32 @@ impl TryFrom<[u8; 4]> for ChunkType {
     }
 }
 
+// Errors implementation
 #[derive(Debug)]
-pub enum ChunkTypeDecodingError {
-    /// We found a bad byte while decoding. The u8 is the first invalid byte found.
-    BadByte(u8),
-    /// The chunk type to be decoded was the wrong size. The usize is the received size.
-    BadLength(usize),
+pub struct ChunkTypeError {
+    message: String,
 }
-impl fmt::Display for ChunkTypeDecodingError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::BadByte(byte) => write!(f, "Bad byte: {byte} ({byte:b})", byte = byte),
-            Self::BadLength(len) => write!(f, "Bad length: {} (expected 4)", len),
-        }
+
+impl ChunkTypeError {
+    fn boxed(message: String) -> Box<Self> {
+        Box::new(Self {message})
     }
 }
+
+impl fmt::Display for ChunkTypeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Bad chunk type: {}", self.message)
+    }
+}
+
+impl std::error::Error for ChunkTypeError {}
 
 impl FromStr for ChunkType {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
         if s.len() != 4 {
-            return Err("ChunkType must be 4 bytes long".into());
+            return Err(ChunkTypeError::boxed(format!("Chunk Type should have 4 bytes, but got {}", s.len())));
         }
 
         let mut arr = [0u8; 4];
@@ -46,7 +50,7 @@ impl FromStr for ChunkType {
             if Self::is_valid_byte(*byte) {
                 arr[i] = *byte;
             } else {
-                return Err("Error".into());
+                return Err(ChunkTypeError::boxed(format!("Bad chunk byte {}", byte)));
             }
         }
         Ok(ChunkType { arr })            
