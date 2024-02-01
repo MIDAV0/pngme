@@ -28,11 +28,11 @@ impl fmt::Display for ChunkError {
 impl std::error::Error for ChunkError {}
 
 #[derive(Debug, Clone)]
-struct Chunk {
-    length: u32,
-    chunk_type: ChunkType,
-    data: Vec<u8>,
-    crc: u32,
+pub struct Chunk {
+    pub length: u32,
+    pub chunk_type: ChunkType,
+    pub data: Vec<u8>,
+    pub crc: u32,
 }
 
 impl TryFrom<&[u8]> for Chunk {
@@ -99,7 +99,7 @@ impl fmt::Display for Chunk {
 }
 
 impl Chunk {
-    fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
+    pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
         let crc = crc32::checksum_ieee(&[&chunk_type.bytes(), data.as_slice()].concat());
         Chunk {
             length: data.len() as u32,
@@ -108,22 +108,22 @@ impl Chunk {
             crc: crc,
         }
     }
-    fn length(&self) -> u32 {
+    pub fn length(&self) -> u32 {
         self.length
     }
-    fn chunk_type(&self) -> &ChunkType {
+    pub fn chunk_type(&self) -> &ChunkType {
         &self.chunk_type
     }
-    fn data(&self) -> &[u8] {
+    pub fn data(&self) -> &[u8] {
         &self.data
     }
-    fn crc(&self) -> u32 {
+    pub fn crc(&self) -> u32 {
         self.crc
     }
-    fn data_as_string(&self) -> Result<String> {
+    pub fn data_as_string(&self) -> Result<String> {
         Ok(String::from_utf8(self.data.clone()).unwrap())
     }
-    fn as_bytes(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Vec<u8> {
         self.length
             .to_be_bytes()
             .iter()
