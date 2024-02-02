@@ -4,8 +4,9 @@ use std::{convert::TryFrom, str::from_utf8};
 use crate::chunk_type::ChunkType;
 use crate::{chunk::Chunk, chunk_type, Error, Result};
 use std::io::{BufReader, Read};
-use std::path::Path;
-use std::fs;
+use std::path::PathBuf;
+use std::fs::{read as read_file, File};
+use std::io::Write;
 
 #[derive(Debug)]
 pub struct PngError {
@@ -26,7 +27,7 @@ impl fmt::Display for PngError {
 
 impl std::error::Error for PngError {}
 
-struct Png {
+pub struct Png {
     chunks: Vec<Chunk>,
 }
 
@@ -71,13 +72,13 @@ impl fmt::Display for Png {
 impl Png {
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
-    fn from_chunks(chunks: Vec<Chunk>) -> Png {
+    pub fn from_chunks(chunks: Vec<Chunk>) -> Png {
         Png { chunks: chunks }
     }
-    fn append_chunk(&mut self, chunk: Chunk) {
+    pub fn append_chunk(&mut self, chunk: Chunk) {
         self.chunks.push(chunk);
     }
-    fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
+    pub fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
         if let Some(pos) = self
             .chunks
             .iter()
@@ -91,10 +92,10 @@ impl Png {
     fn header(&self) -> &[u8; 8] {
         &Png::STANDARD_HEADER
     }
-    fn chunks(&self) -> &[Chunk] {
+    pub fn chunks(&self) -> &[Chunk] {
         &self.chunks.as_slice()
     }
-    fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
+    pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
         // for (i, chunk) in self.chunks.iter().enumerate() {
         //     if chunk.chunk_type == ChunkType::from_str(chunk_type).unwrap() {
         //         return Some(chunk);
@@ -103,7 +104,7 @@ impl Png {
         // None
         self.chunks.iter().find(|c| *c.chunk_type() == ChunkType::from_str(chunk_type).unwrap())
     }
-    fn as_bytes(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Vec<u8> {
         let chunks: Vec<u8> = self.chunks.iter().map(|c| c.as_bytes()).flatten().collect();
         self.header()
             .iter()
@@ -111,9 +112,18 @@ impl Png {
             .copied()
             .collect()
     }
-    pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let file = &fs::read(path)?;
-        Ok(Png::try_from(file.as_slice())?)
+    pub fn from_file(path: PathBuf) -> Result<Self> {
+        let file = read_file(path)?;
+
+        Png::try_from(file.as_slice())
+    }
+    pub fn write_file(&self, path: PathBuf) -> Result<()> {
+        let mut file =
+            File::create(path).map_err(|e| PngError::boxed(format!("Error creating file")))?;
+        file.write(self.as_bytes().as_slice())
+            .map_err(|e| PngError::boxed(format!("Error writing to file")))?;
+
+        Ok(())
     }
 }
 
